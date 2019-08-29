@@ -21,13 +21,13 @@ python3 -m swagger_server
 and open your browser to here:
 
 ```
-http://localhost:8080/depmap_expander/ui/
+http://localhost:8080/disease_genes_producer/ui/
 ```
 
 Your Swagger definition lives here:
 
 ```
-http://localhost:8080/depmap_expander/swagger.json
+http://localhost:8080/disease_genes_producer/swagger.json
 ```
 
 To launch the integration tests, use tox:
