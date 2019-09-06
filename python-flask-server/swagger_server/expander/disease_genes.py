@@ -7,9 +7,7 @@ from swagger_server.models.gene_info_identifiers import GeneInfoIdentifiers
 from swagger_server.models.attribute import Attribute
 
 import requests
-from translator_modules.module0.module0 import DiseaseAssociatedGeneSet
-# from translator_modules.module1.module1a import FunctionallySimilarGenes
-# from translator_modules.module1.module1b import PhenotypicallySimilarGenes
+from translator_modules.disease.gene.disease_associated_genes import DiseaseAssociatedGeneSet
 
 def expander_info():
     """
