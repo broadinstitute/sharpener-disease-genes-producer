@@ -1,8 +1,10 @@
 swagger: '2.0'
 info:
-  title: API for an producer based on disease-specific genes
+  title: MONDO disease association
   version: 1.1.0
-  description: Gene-list producer based on disease-specific genes.
+  description: >-
+    Gene-list producer based on disease-specific genes annotated in 
+    Monarch Disease Ontology (https://www.ebi.ac.uk/ols/ontologies/mondo).
 host: sharpener.ncats.io
 basePath: /disease_genes_producer
 schemes:
