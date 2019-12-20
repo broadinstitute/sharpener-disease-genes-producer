@@ -1,9 +1,10 @@
 ---
 swagger: "2.0"
 info:
-  description: "Gene-list producer based on disease-specific genes."
-  version: "1.1.0"
-  title: "API for an producer based on disease-specific genes"
+  description: "Gene-list producer based on disease-specific genes annotated in  Monarch\
+    \ Disease Ontology (https://www.ebi.ac.uk/ols/ontologies/mondo)."
+  version: "1.3.0"
+  title: "MONDO disease association"
 host: "sharpener.ncats.io"
 basePath: "/disease_genes_producer"
 schemes:
@@ -43,6 +44,14 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/gene_info"
+        400:
+          description: "bad request"
+          schema:
+            $ref: "#/definitions/error_msg"
+        500:
+          description: "internal server error"
+          schema:
+            $ref: "#/definitions/error_msg"
       x-swagger-router-controller: "swagger_server.controllers.transformer_controller"
 definitions:
   transformer_query:
@@ -77,12 +86,13 @@ definitions:
       attributes:
         type: "array"
         description: "Additional information about the gene and provenance about gene-list\
-          \ menbership. Sharpener will use myGene.info to add the following attributes\
-          \ to every gene: 'gene_symbol',  'entrez_gene_id', 'HGNC', 'MIM', 'ensembl_gene_id',\
-          \ 'synonyms', 'gene_name',  and 'myGene.info id'. Multiple synonyms and\
-          \ ensembl_gene_id are separated by semicolons."
+          \ membership. Sharpener will use myGene.info to add 'gene_symbol', 'synonyms',\
+          \ and 'gene_name' to every gene.  Multiple synonyms are separated by semicolons."
         items:
           $ref: "#/definitions/attribute"
+      source:
+        type: "string"
+        description: "Name of a transformer that added gene to the gene list."
     example:
       identifiers:
         mim: "MIM:608958"
@@ -91,30 +101,42 @@ definitions:
         - "ENSEMBL:ENSG00000196839"
         - "ENSEMBL:ENSG00000196839"
         hgnc: "HGNC:186"
+        mygene_info: "100"
       attributes:
       - name: "name"
         source: "source"
         value: "value"
+        url: "url"
       - name: "name"
         source: "source"
         value: "value"
+        url: "url"
+      source: "source"
       gene_id: "gene_id"
   attribute:
     type: "object"
     required:
     - "name"
+    - "source"
     - "value"
     properties:
       name:
         type: "string"
+        description: "Name of the attribute."
       value:
         type: "string"
+        description: "Value of the attribute."
       source:
         type: "string"
+        description: "Transformer that produced the attribute's value."
+      url:
+        type: "string"
+        description: "URL for additional information."
     example:
       name: "name"
       source: "source"
       value: "value"
+      url: "url"
   property:
     type: "object"
     required:
@@ -137,6 +159,12 @@ definitions:
       name:
         type: "string"
         description: "Name of the transformer."
+      label:
+        type: "string"
+        description: "Short label for GUI display."
+      version:
+        type: "string"
+        description: "Transformer's version."
       function:
         type: "string"
         description: "Function of the transformer, one of 'producer', 'expander',\
@@ -148,6 +176,8 @@ definitions:
       description:
         type: "string"
         description: "Description of the transformer."
+      properties:
+        $ref: "#/definitions/transformer_info_properties"
       parameters:
         type: "array"
         description: "Parameters used to control the transformer."
@@ -166,19 +196,38 @@ definitions:
       function: "producer"
       name: "name"
       description: "description"
+      label: "label"
+      version: "version"
       parameters:
       - allowed_values:
         - "allowed_values"
         - "allowed_values"
+        biolink_class: "biolink_class"
         default: "default"
+        allowed_range:
+        - 0.80082819046101150206595775671303272247314453125
+        - 0.80082819046101150206595775671303272247314453125
         name: "name"
+        suggested_values: "suggested_values"
+        lookup_url: "lookup_url"
         type: "Boolean"
       - allowed_values:
         - "allowed_values"
         - "allowed_values"
+        biolink_class: "biolink_class"
         default: "default"
+        allowed_range:
+        - 0.80082819046101150206595775671303272247314453125
+        - 0.80082819046101150206595775671303272247314453125
         name: "name"
+        suggested_values: "suggested_values"
+        lookup_url: "lookup_url"
         type: "Boolean"
+      properties:
+        list_predicate: "list_predicate"
+        method: "method"
+        member_predicate: "member_predicate"
+        source_url: "source_url"
   parameter:
     type: "object"
     required:
@@ -200,18 +249,52 @@ definitions:
       default:
         type: "string"
         description: "Default value of the parameter."
+      biolink_class:
+        type: "string"
+        description: "Biolink class of the paramater. Applicable to producers only\
+          \ and only one parameter can have a biolink class."
       allowed_values:
         type: "array"
         description: "Allowed values for the parameter."
         items:
           type: "string"
+      allowed_range:
+        type: "array"
+        description: "Allowed range for values of the parameter."
+        items:
+          type: "number"
+        maxItems: 2
+        minItems: 2
+      suggested_values:
+        type: "string"
+        description: "Suggested value range for the parameter."
+      lookup_url:
+        type: "string"
+        description: "URL to search for suitable parameter values."
     example:
       allowed_values:
       - "allowed_values"
       - "allowed_values"
+      biolink_class: "biolink_class"
       default: "default"
+      allowed_range:
+      - 0.80082819046101150206595775671303272247314453125
+      - 0.80082819046101150206595775671303272247314453125
       name: "name"
+      suggested_values: "suggested_values"
+      lookup_url: "lookup_url"
       type: "Boolean"
+  error_msg:
+    type: "object"
+    properties:
+      status:
+        type: "integer"
+      title:
+        type: "string"
+      detail:
+        type: "string"
+      type:
+        type: "string"
   gene_info_identifiers:
     properties:
       entrez:
@@ -232,6 +315,10 @@ definitions:
         items:
           type: "string"
           example: "ENSEMBL:ENSG00000196839"
+      mygene_info:
+        type: "string"
+        example: "100"
+        description: "myGene.info primary id."
     example:
       mim: "MIM:608958"
       entrez: "NCBIGene:100"
@@ -239,3 +326,26 @@ definitions:
       - "ENSEMBL:ENSG00000196839"
       - "ENSEMBL:ENSG00000196839"
       hgnc: "HGNC:186"
+      mygene_info: "100"
+  transformer_info_properties:
+    properties:
+      list_predicate:
+        type: "string"
+        description: "BioLink-model predicate describing relationship between input\
+          \ and output gene lists."
+      member_predicate:
+        type: "string"
+        description: "BioLink-model predicate describing relationship between input\
+          \ and output genes."
+      source_url:
+        type: "string"
+        description: "URL for underlying data or a wrapped service."
+      method:
+        type: "string"
+        description: "A method used to generate output gene lists."
+    description: "Additional metadata for the transformer."
+    example:
+      list_predicate: "list_predicate"
+      method: "method"
+      member_predicate: "member_predicate"
+      source_url: "source_url"

@@ -7,25 +7,26 @@ from swagger_server.models.gene_info_identifiers import GeneInfoIdentifiers
 from swagger_server.models.attribute import Attribute
 
 import requests
-from translator_modules.disease.gene.disease_associated_genes import DiseaseAssociatedGeneSet
+from ncats.translator.modules.disease.gene.disease_associated_genes import DiseaseAssociatedGeneSet
+
+import json
+
+transformer_name = 'MONDO disease association'
+valid_controls = ['disease_id']
+control_names = {'disease_id': 'disease ID'}
+
 
 def expander_info():
     """
         Return information for this expander
     """
-    return TransformerInfo(
-        name='Disease Association from MONDO ID',
-        function='producer',
-        description='Gene-list expander based on disease-specific genes',
-        parameters=[
-            Parameter(
-                name='Disease ID',
-                type='string',
-                default='MONDO:0005015'
-            )
-        ],
-        required_attributes = []
-    )
+    global transformer_name, control_names
+
+    with open("transformer_info.json",'r') as f:
+        info = TransformerInfo.from_dict(json.loads(f.read()))
+        transformer_name = info.name
+        control_names = dict((name,parameter.name) for name, parameter in zip(valid_controls, info.parameters))
+        return info
 
 
 def expand(query: TransformerQuery):
@@ -34,8 +35,11 @@ def expand(query: TransformerQuery):
     """
     controls = {control.name:control.value for control in query.controls}
     genes = {}
+    if control_names['disease_id'] not in controls:
+        msg = "required parameter '{}' not specified".format(control_names['disease_id'])
+        return ({ "status": 400, "title": "Bad Request", "detail": msg, "type": "about:blank" }, 400 )
 
-    dags = DiseaseAssociatedGeneSet(controls['Disease ID'], query_biolink=False)
+    dags = DiseaseAssociatedGeneSet(controls[control_names['disease_id']], query_biolink=False)
     # results are a dataframe
     results = dags.results.to_dict('records')
 
@@ -48,11 +52,12 @@ def expand(query: TransformerQuery):
 
         gene = GeneInfo(gene_id=gene_id,
                         identifiers=GeneInfoIdentifiers(hgnc=gene_id),
+                        source=transformer_name,
                         attributes=[
                             Attribute(
                                 name='gene_symbol',
                                 value=str(symbol),
-                                source='Disease Association from MONDO ID'
+                                source=transformer_name
                             ),
                             Attribute(
                                 name='relation',
@@ -64,5 +69,5 @@ def expand(query: TransformerQuery):
 
     return list(genes.values())
 
-# CORR_URL = 'https://indigo.ncats.io/gene_knockout_correlation/correlations/{}'
 
+expander_info()
